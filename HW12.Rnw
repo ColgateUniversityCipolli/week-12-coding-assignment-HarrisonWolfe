@@ -16,6 +16,7 @@
 \begin{document}
 <<echo=F, message=F, warning=F>>=
 library(tidyverse)
+library(VGAM)
 @
 
 \begin{enumerate}
@@ -49,12 +50,48 @@ alternative.
 \begin{enumerate}
   \item What values of $t_{20}$ provide statistically discernible support for the
   alternative hypothesis?
+  <<size='scriptsize'>>=
+qt(0.95,19,0) #df = 19 because df = n-1
+@
   \item What values of $t_{30}$ provide statistically discernible support for the
   alternative hypothesis?
+   <<size='scriptsize'>>=
+qt(0.95,29,0) #df = 29 because df = n-1
+@
   \item Suppose $f_X(x)$ is a Laplace distribution with $a=0$ and $b=4.0$.
   Conduct a simulation study to assess the Type I error rate of this approach.\\
   \textbf{Note:} You can use the \texttt{rlaplace()} function from the \texttt{VGAM}
   package for \texttt{R} \citep{VGAM}.
+  <<size = "scriptsize">>=
+n = 30
+a = 0
+b = 4
+
+early = c()
+normal = c()
+counter = 0
+
+
+for(i in 1:10000){
+  curr.sample = rlaplace(n,a,b)
+  early.sample = curr.sample[1:20]
+  
+  normal = t.test(curr.sample, alternative = "greater")[["statistic"]][["t"]]
+  early = t.test(early.sample, alternative = "greater")[["statistic"]][["t"]]
+
+  if (early > qt(0.95, df = 19)) {
+    counter = counter + 1
+  } else {
+    if (normal > qt(0.95, df = 29)) {
+      counter = counter + 1
+    }
+  }
+ 
+  
+}
+
+(typeierror = counter/10000)
+@
   \item \textbf{Optional Challenge:} Can you find a value of $\alpha<0.05$ that yields a 
   Type I error rate of 0.05?
 \end{enumerate}
@@ -71,12 +108,79 @@ alternative.
   \begin{enumerate}
     \item What proportion of the time do we make an error of Type I for a
     left-tailed test?
+    <<size='scriptsize'>>=
+n=15
+t210 = c()
+t102 = c()
+t1010 = c()
+
+for(i in 1:10000){
+  curr.sample210 = rbeta(n,2,10)
+  curr.sample102 = rbeta(n,10,2)
+  curr.sample1010 = rbeta(n,10,10)
+  
+  t210[i] = t.test(curr.sample210, mu = 1/6, alternative = "less")[["statistic"]][["t"]]
+  t102[i] = t.test(curr.sample102, mu = 5/6, alternative = "less")[["statistic"]][["t"]]
+  t1010[i] = t.test(curr.sample1010, mu = 0.5, alternative = "less")[["statistic"]][["t"]]
+  
+}
+
+
+length(which(t210 < qt(0.05,14)))/10000 #Type 1 for Beta(2,10)
+length(which(t102 < qt(0.05,14)))/10000 #Type 1 for Beta(10,2)
+length(which(t1010 < qt(0.05,14)))/10000 #Type 1 for Beta(10,10)
+@
     \item What proportion of the time do we make an error of Type I for a
     right-tailed test?
+    <<size='scriptsize'>>=
+n=15
+t210 = c()
+t102 = c()
+t1010 = c()
+
+for(i in 1:10000){
+  curr.sample210 = rbeta(n,2,10)
+  curr.sample102 = rbeta(n,10,2)
+  curr.sample1010 = rbeta(n,10,10)
+  
+  t210[i] = t.test(curr.sample210, mu = 1/6, alternative = "greater")[["statistic"]][["t"]]
+  t102[i] = t.test(curr.sample102, mu = 5/6, alternative = "greater")[["statistic"]][["t"]]
+  t1010[i] = t.test(curr.sample1010, mu = 0.5, alternative = "greater")[["statistic"]][["t"]]
+  
+}
+
+
+length(which(t210 > qt(0.95,14)))/10000 #Type 1 for Beta(2,10)
+length(which(t102 > qt(0.95,14)))/10000 #Type 1 for Beta(10,2)
+length(which(t1010 > qt(0.95,14)))/10000 #Type 1 for Beta(10,10)
+@
     \item What proportion of the time do we make an error of Type I for a
     two-tailed test?
+    <<size='scriptsize'>>=
+n=15
+t210 = c()
+t102 = c()
+t1010 = c()
+
+for(i in 1:10000){
+  curr.sample210 = rbeta(n,2,10)
+  curr.sample102 = rbeta(n,10,2)
+  curr.sample1010 = rbeta(n,10,10)
+  
+  t210[i] = t.test(curr.sample210, mu = 1/6)[["statistic"]][["t"]]
+  t102[i] = t.test(curr.sample102, mu = 5/6)[["statistic"]][["t"]]
+  t1010[i] = t.test(curr.sample1010, mu = 0.5)[["statistic"]][["t"]]
+  
+}
+
+
+length(which(t210 > qt(0.975,14) | t210 < qt(0.025,14)))/10000 #Type 1 for Beta(2,10)
+length(which(t102 > qt(0.975,14) | t102 < qt(0.025,14)))/10000 #Type 1 for Beta(10,2)
+length(which(t1010 > qt(0.975,14) | t1010 < qt(0.025,14)))/10000 #Type 1 for Beta(10,10)
+@
     \item How does skewness of the underlying population distribution effect
     Type I error across the test types?
+    \\\textbf{Explanation:} If the distribution is skewed towards the tail of the test than that increases the p-value thereby increasing the probability of a type 1 error. This is why we see a higher type I error for the beta(2,10) distribution in the left-tailed test and the higher type I error in the beta(2,10) distribution in the right-tailed test. This equalizes a little bit in the two-tailed test however it still increases it because there is more data in the tails for skewed distributions proving why the beta(10,10) distribution has the lowest Type I error in this test. 
   \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
